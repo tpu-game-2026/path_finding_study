@@ -30,11 +30,18 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 		// 終点に向かって歩く
 		int dx = 終点.x - 現在.x;
 		int dy = 終点.y - 現在.y;
+		Point 左右 = 現在; 左右.x += (dx > 0) ? 1 : -1;
+		Point 上下 = 現在; 上下.y += (dy > 0) ? 1 : -1;
+
 		if (dx * dx < dy * dy) {
-			現在.y += (dy > 0) ? 1 : -1;
+			// Y方向に近づこうとしてだめならX方向に動く
+			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue; }
+			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue; }
 		}
 		else {
-			現在.x += (dx > 0) ? 1 : -1;
+			// X方向に近づこうとしてだめならY方向に動く
+			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue; }
+			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue; }
 		}
 	}
 
