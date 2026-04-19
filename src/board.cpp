@@ -39,7 +39,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 			Mass& 次のマス = mass[次.y][次.x];
 			if (!map_[次.y][次.x].canMove()) { continue; }
 			if (次のマス.isClosed()) { continue; }
-			int 始点からの歩数 = distance + 1;
+			int 始点からの歩数 = distance + 次のマス.getCost();
 			int 以前の歩数 = 次のマス.getSteps();
 			if (0 <= 以前の歩数) {// 既に訪れた
 				if (以前の歩数 <= 始点からの歩数) { continue; }// 以前の方が近い
