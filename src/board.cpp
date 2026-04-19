@@ -1,5 +1,5 @@
 ﻿#include "board.h"
-#include <random>
+#include <queue>
 
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
@@ -22,44 +22,31 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 	mass[始点.y][始点.x].set(Mass::START);
 	mass[終点.y][終点.x].set(Mass::GOAL);
 
-	std::mt19937 engine;
-
 	// 経路探索
-	Point 現在 = 始点; int c = 0;
-	int steps = 0;
-	Point 停止点 = 終点;// とりあえずありえない場所で初期化
-	while (現在 != 終点 && ++c < 100) {
-		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
-		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
-
-		// 終点に向かって歩く
-		int dx = 終点.x - 現在.x;
-		int dy = 終点.y - 現在.y;
-		Point 左右 = 現在; 左右.x += (dx > 0) ? 1 : -1;
-		Point 上下 = 現在; 上下.y += (dy > 0) ? 1 : -1;
-
-		if (dx * dx < dy * dy) {
-			// Y方向に近づこうとしてだめならX方向に動く
-			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue; }
-			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue; }
-		}
-		else {
-			// X方向に近づこうとしてだめならY方向に動く
-			if (map_[左右.y][左右.x].canMove()) { 現在 = 左右; continue; }
-			if (map_[上下.y][上下.x].canMove()) { 現在 = 上下; continue; }
-		}
-
-		// 動けなかった場合
-		if (停止点 != 現在) {
-			停止点 = 現在; steps = 0;
-		} else { steps++; }
-
-		for (int i = 0; i <= steps; i++) {
-			int r = engine() % 4;// 4方向の乱数
+	std::queue<Point> q;
+	q.push(始点);
+	while(!q.empty()) {
+		Point 現在 = q.front(); q.pop();
+		// 4方向に移動できるか
+		for (int i = 0; i < 4; i++) {
 			Point 次 = 現在;
-			次.x += (r == 0) ? 1 : (r == 1) ? -1 : 0;
-			次.y += (r == 2) ? 1 : (r == 3) ? -1 : 0;
-			if (map_[次.y][次.x].canMove()) { 現在 = 次; continue; }
+			次.x += (i == 0) ? 1 : (i == 1) ? -1 : 0;
+			次.y += (i == 2) ? 1 : (i == 3) ? -1 : 0;
+			if (!map_[次.y][次.x].canMove()) { continue; }
+			if (mass[次.y][次.x].isVisited()) { continue; }
+			mass[次.y][次.x].visit(現在);
+			q.push(次);
+
+			if (次 == 終点)
+			{
+				// 終点に到達したら、親をたどって経路を復元する
+				Point p = 次;
+				while (p != 始点) {
+					p = mass[p.y][p.x].getParent();
+					if (p != 始点) { mass[p.y][p.x].set(Mass::WAYPOINT); }
+				}
+				return true;
+			}
 		}
 	}
 
