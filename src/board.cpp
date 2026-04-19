@@ -27,12 +27,15 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
 		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
 
-		// ★★★ todo: ここを素敵にしよう
 		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
+		int dx = 終点.x - 現在.x;
+		int dy = 終点.y - 現在.y;
+		if (dx * dx < dy * dy) {
+			現在.y += (dy > 0) ? 1 : -1;
+		}
+		else {
+			現在.x += (dx > 0) ? 1 : -1;
+		}
 	}
 
 	return true;
