@@ -2,6 +2,11 @@
 using namespace std;
 const float INF = 2e9;
 
+static float heuristic(const Point& p, const Point& goal)
+{
+	return 0.3f * (abs(goal.x - p.x) + abs(goal.y - p.y));
+}
+
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
 	{ BLANK, { 1.0f, ' '}},
@@ -46,7 +51,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 	);
 
 	multimap<float, Point> q;
-	q.insert({Point::distance(始点, 終点), 始点});
+	q.insert({ heuristic(始点, 終点), 始点 });
 
 	// 経路探索
 	while (!q.empty())
@@ -89,7 +94,7 @@ bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vect
 
 			dist[next.y][next.x] = stepsfromstart;
 			parents[next.y][next.x] = now;
-			q.insert({stepsfromstart + Point::distance(next, 終点), next});
+			q.insert({ stepsfromstart + heuristic(next, 終点), next });
 		}
 	}
 
