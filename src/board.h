@@ -48,8 +48,19 @@ public:
 private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
+	bool is_closed_ = false;
+	int steps_ = -1;
+	Point parent_;
 
 public:
+	void visit(const Point& parent, const Mass& parentMass) {
+		parent_ = parent; steps_ = parentMass.getSteps() + 1;
+	}
+	void close() { is_closed_ = true;}
+	bool isClosed() const { return is_closed_;}
+	int getSteps() const{ return steps_; }
+	const Point& getParent() { return parent_; }
+
 	void set(status s) { s_ = s; }
 	void set(char c) {// cの文字を持つstatusを検索して設定する（重い）
 		s_ = INVALID;// 見つからなった際の値
