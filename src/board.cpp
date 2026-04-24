@@ -16,23 +16,63 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 };
 
 
-bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
+bool Board::find(const Point& start, const Point& end, std::vector<std::vector<Mass>>& mass) const
 {
-	mass[始点.y][始点.x].set(Mass::START);
-	mass[終点.y][終点.x].set(Mass::GOAL);
+	mass[start.y][start.x].set(Mass::START);
+	mass[end.y][end.x].set(Mass::GOAL);
 
 	// 経路探索
-	Point 現在 = 始点;
-	while (現在 != 終点) {
-		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
-		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
+	std::multimap<float, Point> queue;	//優先度付きキュー
+	mass[start.y][start.x].visit(start, mass[start.y][start.x]);
+	queue.insert({ Point::distance(start,end),start });
+	while (!queue.empty())
+	{
+		Point now = queue.begin()->second;
+		int distance = mass[now.y][now.x].getSteps();
+		queue.erase(queue.begin());
+		mass[now.y][now.x].close();
 
 		// ★★★ todo: ここを素敵にしよう
-		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
+		for (int i = 0; i < 4; i++)
+		{
+			Point next = now;
+			next.x += (i == 0) ? 1 : (i == 1) ? -1 : 0;
+			next.y += (i == 2) ? 1 : (i == 3) ? -1 : 0;
+			Mass& nextMass = mass[next.y][next.x];
+			if (!map_[next.y][next.x].canMove()) { continue; }
+			if (nextMass.isClosed()) { continue; }
+			int stepsFromStart = distance + nextMass.getCost();
+			int stepsOld = nextMass.getSteps();
+			if (0 <= stepsOld)
+			{
+				if (stepsOld <= stepsFromStart) { continue; }
+
+				auto range = queue.equal_range(stepsOld);
+				for (auto it = queue.begin(); it != queue.end(); ++it)
+				{
+					if (it->second == next)
+					{
+						queue.erase(it);
+						break;
+					}
+				}
+			}
+			nextMass.visit(now, nextMass);
+			queue.insert({ static_cast<float>(stepsFromStart) + Point::distance(next,end),next });
+
+			if (next == end)
+			{
+				Point p = next;
+				while (p != start)
+				{
+					p = mass[p.y][p.x].getParent();
+					if (p != start)
+					{
+						mass[p.y][p.x].set(Mass::WAYPOINT);
+					}
+				}
+			}
+		}
 	}
 
 	return true;
