@@ -47,7 +47,12 @@ public:
 	};
 private:
 	static std::map<status, MassInfo> statusData;
+
 	status s_ = BLANK;
+
+	bool is_closed = false; //終了したマスかどうか。
+	int steps = -1; //始点からの補数。
+
 
 public:
 	void set(status s) { s_ = s; }
@@ -55,11 +60,26 @@ public:
 		s_ = INVALID;// 見つからなった際の値
 		for (auto& x : statusData) { if (x.second.chr == c) { s_ = x.first; return; } }
 	}
+	Point parent;
 
 	const std::string getText() const { return std::string{ statusData[s_].chr}; }
 
 	bool canMove() const { return 0 <= statusData[s_].cost; }
 	float getCost() const { return statusData[s_].cost; }
+
+	//massにひとつ前のマスのデータを格納します。
+	void visit(const Point& _parent, const Mass &parentMass) {
+		parent = _parent; 
+		steps = parentMass.getSteps() + 1;
+	}
+	//マスを探索済みにします。
+	void close() { is_closed = true; }
+	//stepsを獲得します。
+	int getSteps()const { return steps; }
+	//マスが探索済みかを返します。
+	bool isClosed()const { return is_closed; }
+	//親を返します。
+	const Point& getParent() { return parent; }
 };
 
 class Board {
