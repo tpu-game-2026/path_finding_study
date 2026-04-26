@@ -48,7 +48,7 @@ public:
 private:
 	static std::map<status, MassInfo> statusData;
 	status s_ = BLANK;
-	int steps = 0;
+	int steps = -1;
 	bool is_Closed = false;
 	Point parent_;
 
