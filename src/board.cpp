@@ -1,4 +1,8 @@
 ﻿#include "board.h"
+#include <queue>
+#include <limits>
+#include <vector>
+#include <algorithm>
 
 std::map<Mass::status, MassInfo> Mass::statusData =
 {
@@ -18,22 +22,94 @@ std::map<Mass::status, MassInfo> Mass::statusData =
 
 bool Board::find(const Point& 始点, const Point& 終点, std::vector<std::vector<Mass>> &mass) const
 {
-	mass[始点.y][始点.x].set(Mass::START);
-	mass[終点.y][終点.x].set(Mass::GOAL);
+    struct Node {
+        Point pos;
+        float g;
+        float f;
 
-	// 経路探索
-	Point 現在 = 始点;
-	while (現在 != 終点) {
-		// 歩いた場所に印をつける(見やすさのために始点は書き換えない)
-		if (現在 != 始点){mass[現在.y][現在.x].set(Mass::WAYPOINT);}
+        bool operator<(const Node& rhs) const {
+            return f > rhs.f;
+        }
+    };
 
-		// ★★★ todo: ここを素敵にしよう
-		// 終点に向かって歩く
-		if (現在.x < 終点.x) { 現在.x++; continue; }
-		if (終点.x < 現在.x) { 現在.x--; continue; }
-		if (現在.y < 終点.y) { 現在.y++; continue; }
-		if (終点.y < 現在.y) { 現在.y--; continue; }
-	}
+    int 高さ = (int)mass.size();
+    int 幅 = (int)mass[0].size();
+
+    std::priority_queue<Node> open;
+
+    std::vector<std::vector<float>> cost(
+        高さ, std::vector<float>(幅, std::numeric_limits<float>::max())
+    );
+
+    std::vector<std::vector<Point>> parent(
+        高さ, std::vector<Point>(幅, { -1,-1 })
+    );
+
+    Point dir[4] = {
+        {1,0},{-1,0},{0,1},{0,-1}
+    };
+
+    cost[始点.y][始点.x] = 0.0f;
+
+    open.push({
+        始点,
+        0.0f,
+        Point::distance(始点, 終点)
+        });
+
+    while (!open.empty())
+    {
+        Node now = open.top();
+        open.pop();
+
+        if (now.pos == 終点)
+        {
+            Point p = 終点;
+
+            while (p != 始点)
+            {
+                if (p != 終点)
+                    mass[p.y][p.x].set(Mass::WAYPOINT);
+
+                p = parent[p.y][p.x];
+            }
+
+            mass[始点.y][始点.x].set(Mass::START);
+            mass[終点.y][終点.x].set(Mass::GOAL);
+            return true;
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            Point next = now.pos + dir[i];
+
+            if (next.x < 0 || next.x >= 幅 ||
+                next.y < 0 || next.y >= 高さ)
+                continue;
+
+            if (!mass[next.y][next.x].canMove())
+                continue;
+
+            float newCost =
+                cost[now.pos.y][now.pos.x] +
+                mass[next.y][next.x].getCost();
+
+            if (newCost < cost[next.y][next.x])
+            {
+                cost[next.y][next.x] = newCost;
+                parent[next.y][next.x] = now.pos;
+
+                float h =
+                    Point::distance(next, 終点);
+
+                open.push({
+                    next,
+                    newCost,
+                    newCost + h
+                    });
+            }
+        }
+    }
 
 	return true;
 }
